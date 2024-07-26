@@ -3,7 +3,6 @@ import torch.nn as nn
 import torch.optim as optim
 from torchvision import datasets, transforms
 
-# Define a simple CNN model
 class SimpleCNN(nn.Module):
     def __init__(self):
         super(SimpleCNN, self).__init__()
@@ -14,7 +13,7 @@ class SimpleCNN(nn.Module):
         self.fc2 = nn.Linear(512, 1)
         self.sigmoid = nn.Sigmoid()
 
-        # Dummy input to calculate the size
+        # Dummy input to calculate the size of tensor after conv and pool layers so fc1 gets defined properly
         dummy_input = torch.randn(1, 3, 150, 150)
         dummy_output = self._forward_features(dummy_input)
         self.fc1 = nn.Linear(dummy_output.view(-1).size(0), 512)
@@ -34,35 +33,26 @@ class SimpleCNN(nn.Module):
 
 # Prepare data
 transform = transforms.Compose([
-    transforms.Resize((150, 150)),
+    transforms.Resize((150, 150)), # resize to 150 x 150
     transforms.RandomHorizontalFlip(),
     transforms.RandomRotation(10),
-    transforms.ToTensor()
+    transforms.ToTensor() # this converts images to pytorch tensors
 ])
 
-train_data = datasets.ImageFolder(root='data/train', transform=transform)
-train_loader = torch.utils.data.DataLoader(train_data, batch_size=32, shuffle=True)
+train_data = datasets.ImageFolder(root='data/train', transform=transform) # load training data using the transform thing
+train_loader = torch.utils.data.DataLoader(train_data, batch_size=32, shuffle=True) # chuck the train data here so you can btach/shuffle it
 
 val_data = datasets.ImageFolder(root='data/val', transform=transforms.Compose([
     transforms.Resize((150, 150)),
     transforms.ToTensor()
 ]))
-val_loader = torch.utils.data.DataLoader(val_data, batch_size=32, shuffle=False)
-# transform = transforms.Compose([
-#     transforms.Resize((150, 150)),
-#     transforms.ToTensor()
-# ])
+val_loader = torch.utils.data.DataLoader(val_data, batch_size=32, shuffle=False) # same goes for the validation stuff
 
-# train_data = datasets.ImageFolder(root='data/train', transform=transform)
-# train_loader = torch.utils.data.DataLoader(train_data, batch_size=32, shuffle=True)
 
-# val_data = datasets.ImageFolder(root='data/val', transform=transform)
-# val_loader = torch.utils.data.DataLoader(val_data, batch_size=32, shuffle=False)
-
-# Initialize model, loss function, and optimizer
+# Initialising model, loss function and optimiser
 model = SimpleCNN()
-criterion = nn.BCELoss()
-optimizer = optim.Adam(model.parameters(), lr=0.001)
+criterion = nn.BCELoss() # this is the binary cross entropy loss thing
+optimizer = optim.Adam(model.parameters(), lr=0.001) # learning rate or 0.001
 
 # Function to evaluate the model on the validation dataset
 def validate(model, val_loader, criterion):
@@ -94,7 +84,7 @@ for epoch in range(epochs):
     model.train()
     running_loss = 0.0
     for inputs, labels in train_loader:
-        optimizer.zero_grad()
+        optimizer.zero_grad() # reset gradient thing to zero
         outputs = model(inputs)
         loss = criterion(outputs, labels.float().unsqueeze(1))
         loss.backward()
@@ -105,14 +95,14 @@ for epoch in range(epochs):
     val_loss, val_accuracy = validate(model, val_loader, criterion)
     
     print(f"Epoch {epoch + 1}, Train Loss: {train_loss}, Val Loss: {val_loss}, Val Accuracy: {val_accuracy}")
-    scheduler.step()
-    
+    scheduler.step() # step the schedular
+
 # Save the model
 torch.save(model.state_dict(), 'model.pth')
 
-# Convert to ONNX format
+# Convert to ONNX format for later
 model.eval()
 dummy_input = torch.randn(1, 3, 150, 150)
 onnx_path = "model.onnx"
 torch.onnx.export(model, dummy_input, onnx_path, input_names=["input"], output_names=["output"])
-print("Model converted to ONNX format successfully.")
+print("Model converted to ONNX yay it workeddd.")
